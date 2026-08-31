@@ -434,6 +434,22 @@ first two lines of the transcript looked like a healthy start.
 `pass=0 fail=0` is the tell: a pull request with CI configured never has zero of both. Treat
 a zero count as a failed read, exactly as the empty-string comparison above is treated.
 
+**A watcher can also finish before the legs it should be watching exist.** `gh pr checks
+--watch` returns as soon as *the checks it can see* are done, and a freshly pushed head has
+almost none of them registered yet: measured, it exited **0** reporting `1 pass` while the
+same pull request showed `1 pass, 27 pending` seconds later — the one check it saw was the
+review bot's own. A review was then asked for on a head whose CI had not started, which is
+the thing the ask is supposed to wait for.
+
+So a watch that ends is not a CI verdict either. **Count the checks, and compare the count
+to what this repository actually runs** — a number that only moves when a workflow changes,
+so a sudden drop is a failed read rather than a smaller matrix. The loop that survives this
+polls until no line reads `pending` *and* the total matches:
+
+```shell
+gh pr checks "$pr" | awk -F'\t' '{print $2}' | sort | uniq -c   # 28 pass, or keep waiting
+```
+
 **And a zero count can come from the tool succeeding at reporting failure.** `gh pr checks`
 exits **8** whenever any check is pending or failing — which is exactly the state a
 merge gate exists to see. A wrapper that keeps stdout only on exit 0, retries, and returns
