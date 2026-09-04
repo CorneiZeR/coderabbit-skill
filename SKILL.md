@@ -136,6 +136,71 @@ next reader from looking. The cheap check is to delete the suppression or the gu
 and read what it actually says; if that does not match the sentence you wrote, the sentence is the
 defect.
 
+### A guard is as complete as the branches it was built from
+
+The sweep above looks for other *sites*. This one is about the other *cases*, and it is the
+shape that costs the most rounds when the change under review is a **check** — a validator, a
+refusal, a "may this be replayed / retried / cached" predicate.
+
+Seen across four passes on one command: a refusal was built from the three loss markers that
+existed in the module it guarded. The module lost data in four more ways that left no marker —
+a string cut to its cap, a mapping cut to its cap, a sequence cut to its cap, a `datetime`
+rendered as text — and each arrived as its own finding, one round apart, all four in a function
+that had been read while writing the guard.
+
+The mistake is not skipped reading. It is building the list from **what is already marked**
+instead of from what the guarded thing can do. So when the diff adds a check:
+
+1. Open the function it is checking and walk **every `return`**, not the ones with a marker on
+   them. Each branch either preserves the property or breaks it; the ones that break it and say
+   nothing are the findings you have not had yet.
+2. Prefer the invariant to the enumeration. Four of those findings were one property:
+   *if the check says nothing was lost, the recorded value equals the input*. One property test
+   over generated inputs covers every branch the function has now and every branch it grows,
+   and it does not depend on anybody remembering to look. An enumeration is a snapshot of one
+   afternoon's reading.
+3. Where the property cannot be tested that way, write the enumeration **into the code** as the
+   list the check is built from, so the next person edits one place rather than discovering
+   there were two.
+
+### Fixing the sentence is not fixing the claim
+
+A finding that says a sentence is false has two fixes, and the cheap one is usually wrong.
+Deleting or hedging the sentence removes the claim; the expensive one asks whether the claim was
+the thing worth having.
+
+Measured, twice on one pull request: the page said *"run it again for the next hundred"*, which
+was false. The first fix made it true for one layer — a replayed failure was skipped — and left
+it false for the layer above, where the bound was applied to the rows read rather than to the
+messages sent, so a second run skipped the same hundred and never reached the hundred-and-first.
+The second round found exactly that. A claim about *repetition* needs a case that repeats:
+two runs, three runs, and an assertion about what the later ones reached.
+
+So: when the finding is a false claim, name the property the sentence was promising, write the
+case from **the sentence** rather than from the code path, and let the test's name be that
+sentence. A case written from the diff tests the mechanism you just wrote; a case written from
+the sentence tests the thing a reader will rely on. The two agree right up until the mechanism
+is only part of the promise.
+
+### A semantic fix can empty an older test
+
+The rule everywhere else is that a change carries a test that fails without it. It does not
+follow that the tests around it still fail without *their* code, and a fix that changes what a
+command does can quietly turn an earlier case into one that passes for a new reason.
+
+Measured: a de-duplication added in one round made a case about timezone parsing vacuous two
+rounds later. The case ran the command twice and asserted the queue; after the change, the
+second run skipped its row as already handled whatever window the parser produced. It passed
+with the parser deliberately broken, and the next pass reported it.
+
+So after a fix that changes behaviour rather than adding a branch, re-apply the swaps from the
+**earlier** rounds of the same pull request, not only the newest one, and check each still fails
+the case it was written for. Keeping those swaps in the commit messages as you go is what makes
+this a loop rather than an act of memory. A case that no longer fails under its own swap is a
+finding you can have before the reviewer does — and it is the one class of defect where the
+reviewer is reading your tests rather than your code, so it comes back as *two* rounds: the
+vacuous case, and then whatever it was supposed to be guarding.
+
 ### Sweep before the review, not only after
 
 The same tool run against your own diff turns most of these findings into things you never hear
@@ -145,6 +210,14 @@ only: a name the change added is meant to be everywhere, and reporting it would 
 that are meant to be nowhere.
 
 Run it after the local pass and before pushing, and treat what it prints as findings.
+
+**And run the local pass again after each round of fixes, not only before the first push.** It
+draws on its own hourly allowance, so it costs nothing from the column that gates the merge, and
+the fixes are where the next findings live: on one pull request, eleven of thirteen findings
+were in the two files that pull request had just written, and the largest of them — four
+unmarked loss modes in a guarded function — came from a *local* pass before the first push
+rather than from any of the four pull request reviews that followed. A round of fixes is a new
+draft. Review it like one.
 
 ### It also catches the damage a rename does on its way through
 
@@ -1335,7 +1408,19 @@ That last shape recurs. When it says a test would pass with the change reverted,
 2. Wait for CI to finish.
 3. Ask for a **full review** and confirm from its reply that the review **ran**, not that the head
    looks covered. A refusal is a refusal no matter how green the rest of the page is.
-4. Answer every finding in its thread; confirm no unresolved threads remain.
+4. Answer every finding in its thread; confirm no unresolved threads remain. Three checks
+   belong to **this** step rather than to the first draft, because the fixes are the newest and
+   least-read code on the branch — and on one pull request eleven of thirteen findings were in
+   the files it had just written:
+   - the fix's own diff swept for the finding's predicate — see
+     **[Sweep your own diff for the class](#sweep-your-own-diff-for-the-class-before-answering-the-finding)**;
+   - a check you added built from **every branch** of what it guards, not from the cases already
+     marked — **[A guard is as complete as the branches it was built from](#a-guard-is-as-complete-as-the-branches-it-was-built-from)**;
+   - the earlier rounds' swaps re-applied, since a behaviour change can empty a case written two
+     rounds ago — **[A semantic fix can empty an older test](#a-semantic-fix-can-empty-an-older-test)**.
+
+   Then `cr-local.sh` again before the push, for the reason step 0 gives: a round of fixes is a
+   new draft, and its findings cost nothing from the column that gates the merge.
 5. **Prove the head you are merging was reviewed.** The gate is
    `newest non-empty review body`.commit_id == current head — not "a review exists", and not
    "the waiter said reviewed at head". A review whose `body` is empty is the wrapper around a
