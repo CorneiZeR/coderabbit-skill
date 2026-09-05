@@ -1,0 +1,36 @@
+name: A failure worth a rule
+description: Something went wrong that this procedure does not cover
+labels: ["new rule"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A rule is judged on its provenance before its wording — see
+        [`CONTRIBUTING.md`](https://github.com/CorneiZeR/coderabbit-skill/blob/main/CONTRIBUTING.md). A rule that cannot name
+        a cost is an argument for deleting it, not for writing it down.
+  - type: textarea
+    id: what-went-wrong
+    attributes:
+      label: What went wrong
+      description: The command, the output, and the moment it was believed.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: What it cost
+      description: Concretely — a wasted slot, a wrong merge, hours of a waiter that was alive and doing nothing.
+    validations:
+      required: true
+  - type: textarea
+    id: why-not-caught
+    attributes:
+      label: Why the existing rules did not catch it
+      description: If one did and was skipped, say so — the fix is usually to make that rule enforceable rather than to add another.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What the rule would say
+      description: One or two sentences, in the voice of the file it would live in. Optional — the failure is the valuable part.

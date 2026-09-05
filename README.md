@@ -116,7 +116,13 @@ a missing one.
 
 Found a rule that misfires, a CodeRabbit behaviour that has since changed, or a failure mode this
 procedure does not cover? [Open an issue](../../issues) — ideally with the pull request and the
-comment that showed it.
+comment that showed it. The two templates ask for what a rule needs anyway: what happened, what it
+cost, and why the rules already here did not catch it.
+
+Proposing one yourself: [`CONTRIBUTING.md`](CONTRIBUTING.md) says what earns a rule its place, and
+what a script has to survive. Security problems go to [`SECURITY.md`](SECURITY.md) rather than to an
+issue. Behaviour in the community spaces around this repository:
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ## License
 

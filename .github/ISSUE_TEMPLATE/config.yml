@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/CorneiZeR/coderabbit-skill/security/advisories/new
+    about: Report privately instead of opening an issue.
+  - name: CodeRabbit itself
+    url: https://docs.coderabbit.ai
+    about: This repository is a procedure for using CodeRabbit; it is not CodeRabbit, and cannot fix its behaviour.

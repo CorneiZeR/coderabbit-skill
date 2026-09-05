@@ -1,0 +1,41 @@
+name: A rule or script that failed
+description: Something here told you to do a thing, and the thing did not work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems do not belong here — see [`SECURITY.md`](https://github.com/CorneiZeR/coderabbit-skill/blob/main/SECURITY.md).
+  - type: input
+    id: where
+    attributes:
+      label: Which rule or script
+      description: The section of `SKILL.md`, or the script and the flags you passed.
+      placeholder: "cr-await.sh 42, or SKILL.md → Order of operations, step 5"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The output, verbatim where it is short. Redact tokens and private repository names.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+      description: Quote the sentence that told you to expect it, if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: What it cost
+      description: A spent review slot, a merged unreviewed head, an hour of waiting. This is how a fix gets prioritised.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, shell, `gh --version`, `coderabbit --version` where relevant, and this repository's commit SHA.
+      placeholder: "macOS 15.6, zsh, gh 2.62.0, coderabbit 0.7.5, at b6bbac0"
