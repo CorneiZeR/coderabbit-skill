@@ -49,6 +49,14 @@ sat unread in the review body the whole time. Worse, its single-source version c
 its own "none" fallback: the first marker check exited the script.
 → `SKILL.md`, *What is not a thread*; `scripts/_common.sh`, `cr_latest_review_body`
 
+**The settle is part of the waiter, and pushing into it costs the evidence.**
+A pass finished, the walkthrough reached the head, and the waiter began its three minutes of
+re-reading the threads — which reads exactly like idle time. A commit was pushed a minute in. The
+pass was not wasted, since it had already ended; what was lost is what it proved. `clean at this
+head` named a SHA that was no longer the head, and the merge gate had to be paid for again out of
+the same hourly column.
+→ `SKILL.md`, *Never push while a review you asked for is in flight*
+
 ## The allowance rules
 
 **A finding is a sample, not the population.**
@@ -90,6 +98,13 @@ again. And the interval it names is in seconds, minutes or hours depending on ho
 is. A parser that only knows minutes matches nothing on *"available in 33 seconds"*, and under
 `set -euo pipefail` that empty match took the whole script down mid-wait.
 → `SKILL.md`, *Rate limits*; `cr_wait_seconds`
+
+**Where nothing is automatic, `reviewed: never` is a resting state.**
+A repository below the ten-star threshold gets no automatic pass at all. A pull request was opened
+there, its CI went green, and it sat for seven hours while the status line was checked repeatedly
+and answered `reviewed: never` — which is also what it says while a pass is on its way. Each check
+was reported as "waiting for the review". Nothing was ever coming: opening is not asking.
+→ `SKILL.md`, *A fresh pull request needs no `full review` command*
 
 ## The plumbing rules
 
@@ -134,6 +149,21 @@ belongs on the listing and nowhere else — which is what makes it easy to misre
 gap. Check the shape of the path first; the account story is the right one only when a correctly
 shaped call returns nothing.
 → `SKILL.md`, *The wrong `gh` account*
+
+**Reads pass under the wrong account long after writes have stopped.**
+`cr_ensure_account` pins the scripts here; everything outside them keeps whatever the machine's
+shared pointer says. A whole round went by on correct data and failed on the one command that
+mattered: *"<other-account> does not have the correct permissions to execute `MergePullRequest`"*.
+The refusal names the account that had been acting all along, which makes it information rather
+than a permissions problem.
+→ `SKILL.md`, *The wrong `gh` account looks exactly like "nothing to report"*
+
+**One lens by default; several only when the branch has earned them.**
+The three-lens sweep was written from a release branch where it found ten real defects after four
+pull request rounds, and then became the routine — three passes out of the CLI column on branches
+of two files, mostly reproducing each other. A local pass is minutes of wall clock and a slot; the
+whole change against the pull request's base is the pass that answers the question the merge asks.
+→ `SKILL.md`, *One lens by default; several when the branch has earned them*
 
 ## The answering rules
 

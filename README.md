@@ -36,6 +36,9 @@ the parts a human — or an agent — reliably forgets.
 - **Never push while a review you asked for is in flight.** The pass reads the head as it was when
   the request was accepted; the slot is spent and the head stays uncovered. A rate-limit window is
   not idle time — it is the moment for a local pass, which comes out of a different column.
+- **Opening a pull request is not asking for a review.** A repository below ten stars gets no
+  automatic pass; `reviewed: never` then sits there for as long as you are willing to look at it,
+  and reads exactly like a pass on its way.
 - **Never say "fixed in `<sha>`" without reading that sha's diff.** A commit message that describes
   the repair proves nothing; grep the pushed commit for the change itself.
 

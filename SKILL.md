@@ -370,6 +370,14 @@ finish the local pass, push, _then_ ask. If a finding arrives while a push is al
 kill the waiter first and re-ask after the push — a deliberate re-ask costs the same slot the
 accidental one wasted, and at least it lands on the right commit.
 
+**And the waiter is still running during the settle, which is the part that reads like idle
+time.** Measured: a pass finished, the walkthrough reached the head, the waiter began its three
+minutes of re-reading the threads — and a commit was pushed a minute into that window. The pass
+was not wasted, because it had already ended; what was lost is its *evidence*. `clean at this
+head` named a SHA that was no longer the head, so the merge gate had to be paid for again with
+another pass out of the same hourly column. The verdict is the end of the round, not the
+walkthrough: read the exit status before touching the branch.
+
 ## The walkthrough at head is not the last thing a pass posts
 
 **Do not merge the moment the SHA matches.** The inline threads and the pre-merge table arrive
@@ -695,6 +703,20 @@ If a script ever reports "no logged-in gh account can read X", that is a real pe
 gap — `gh auth login` an account that has one, or set `CR_REPO`/check org access — not
 another instance of this issue.
 
+**Reads pass under the wrong account long after writes have stopped.** `cr_ensure_account` pins
+the scripts here, and everything outside them keeps whatever the shared pointer says — so a
+whole round can go by on the right data and fail on the one command that matters:
+
+```
+GraphQL: <other-account> does not have the correct permissions to execute `MergePullRequest`
+```
+
+Seen on a merge, with every status, thread and check in the same session read correctly. Two
+things follow. Pin the account for the write as well as for the review — `GH_TOKEN=$(gh auth
+token -u <login>)` is what the scripts do — or switch it globally once with `gh auth switch -u
+<login>` and confirm with `gh api user -q .login`. And treat the refusal as information rather
+than as a permissions problem: the account it names is the one that has been acting all along.
+
 ## github.com fails transiently, and `set -e` turns that into a lie
 
 `gh` answers `HTTP 503 No server is currently available` in bursts — four calls in a row,
@@ -992,7 +1014,16 @@ genuinely predicts a pull request finding. Two consequences worth holding on to:
 **One at a time**, for the reason in "One waiter, ever": two concurrent local reviews are two
 reviews out of the same column, and neither finishes sooner for it.
 
-### Sweep with several lenses, not the same review twice
+### One lens by default; several when the branch has earned them
+
+**Ask for one pass, and make it the whole change** — `cr-local.sh --committed --base <pr base>`.
+That is the default because it is what the merge reads, and because a local pass is minutes of
+wall clock and one slot out of the CLI column: three of them on a two-file branch spend the
+column to be told the same thing three ways.
+
+The extended sweep below is for a branch that has earned it — a release-sized diff, a stack that
+has been through several review rounds, anything where the first pass came back with real
+findings. Reach for it deliberately, not as the routine.
 
 A second pass over the same diff with the same scope mostly reproduces the first. What earns its
 place is a _different lens_, and three of them cover a branch well:
@@ -1167,6 +1198,14 @@ slot is ever spent without you asking.
 
 Read the check's message on the first pull request in a repository and know which regime you are
 in before planning a round.
+
+**In that regime `reviewed: never` is a resting state, not a symptom**, and it is the one thing
+in this skill most likely to be misread as waiting. A pull request was opened, its CI went
+green, and it sat for seven hours with nobody asking — the status line said `reviewed: never`
+each time it was checked, which is exactly what it says while a pass is on its way, and the
+report given each time was "waiting for the review". Nothing was ever coming. Where reviews are
+not automatic, *opening* is not *asking*: the ask is a separate act, and until you make it the
+status line will keep answering the same way for ever.
 
 Where reviews _are_ automatic: opening a PR triggers one, and on the first pass there is nothing
 "incremental" about it: the diff _is_ the whole pull request, so that review reads
