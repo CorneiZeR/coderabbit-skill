@@ -1014,6 +1014,25 @@ genuinely predicts a pull request finding. Two consequences worth holding on to:
 **One at a time**, for the reason in "One waiter, ever": two concurrent local reviews are two
 reviews out of the same column, and neither finishes sooner for it.
 
+**Reading the report from a script: decide on the verdict, never on a phrase.** A wrapper that
+watches a branch has to sort the output into clean, findings, refused, or unrecognised — and the
+obvious way, grepping the whole report for `rate limit`, is wrong for a reason that only shows up
+once the tool starts quoting you back. Measured on 2026-09-09: a review came back with two
+findings, and one of them proposed new wording for a sentence containing the words _"rate
+limited"_ — a sentence out of the very document under review. The wrapper matched that quotation,
+read a COMPLETED review as a refusal, waited, and then spent a second review out of an hourly
+allowance of three.
+
+The verdict lives in the report's own closing lines — `Review complete` with an `N findings`
+count, or the `No findings` line — and everything above them is content the reviewer echoed: a
+diff, a proposed wording, a file name, a rule from your own repository. Any of it can contain any
+phrase you grep for, including the phrases the tool uses for its own status. So: match the closing
+verdict first and only then the refusal phrases, and let a report that fits neither stop the script
+rather than resemble whichever answer it happened to grep near.
+
+The same trap as `pgrep -f` in "One waiter, ever", one layer up: there, a process was found because
+its command line mentioned the phrase; here, a status was found because the report quoted it.
+
 ### One lens by default; several when the branch has earned them
 
 **Ask for one pass, and make it the whole change** — `cr-local.sh --committed --base <pr base>`.
