@@ -1,0 +1,11 @@
+{
+  "name": "coderabbit",
+  "version": "1.0.0",
+  "description": "Reviewing with CodeRabbit as an operating procedure: which of the three surfaces to spend, how the hourly allowances behave, how to prove a review actually covered the head commit, and why a finding is a sample of a class rather than a single site. Scripts for the waiting, the threads and the sweep.",
+  "author": {
+    "name": "Oleksii Kolosiuk"
+  },
+  "homepage": "https://github.com/CorneiZeR/coderabbit-skill",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": ["code-review", "coderabbit", "pull-request", "merge-request", "quality"]
+}

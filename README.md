@@ -54,10 +54,19 @@ gates a merge.
 
 ## Install
 
-The repository root *is* the skill directory, so one clone installs it:
+Two lines in Claude Code:
+
+```
+/plugin marketplace add CorneiZeR/claude-plugins
+/plugin install coderabbit@corneizer
+```
+
+`/plugin update` keeps it current. To work on the skill itself instead, clone
+it and link the skill directory by hand:
 
 ```bash
-git clone https://github.com/CorneiZeR/coderabbit-skill.git ~/.claude/skills/coderabbit
+git clone https://github.com/CorneiZeR/coderabbit-skill.git
+ln -sfn "$PWD/coderabbit-skill/skills/coderabbit" ~/.claude/skills/coderabbit
 ```
 
 Prerequisites: [`gh`](https://cli.github.com) authenticated against the repositories you review,
@@ -72,11 +81,11 @@ Prerequisites: [`gh`](https://cli.github.com) authenticated against the reposito
 
 A machine with several `gh` logins has a single global "active account" pointer that has been
 observed to flip mid-run, so every script asserts the identity before it writes — see
-`cr_ensure_account` in [`scripts/_common.sh`](scripts/_common.sh).
+`cr_ensure_account` in [`scripts/_common.sh`](skills/coderabbit/scripts/_common.sh).
 
 ## Scripts
 
-They live in `scripts/`; `SKILL.md` refers to them by bare name, so either call them by path or put
+They live in `skills/coderabbit/scripts/`; `SKILL.md` refers to them by bare name, so either call them by path or put
 that directory on `PATH`.
 
 | script | what it does |
