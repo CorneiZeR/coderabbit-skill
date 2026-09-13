@@ -83,6 +83,21 @@ A machine with several `gh` logins has a single global "active account" pointer 
 observed to flip mid-run, so every script asserts the identity before it writes — see
 `cr_ensure_account` in [`scripts/_common.sh`](skills/coderabbit/scripts/_common.sh).
 
+## Commands
+
+Installed with the plugin, in the order the work actually goes:
+
+| Command | When |
+| --- | --- |
+| `/cr-local` | code written, nothing pushed — its own allowance, catches the cheap findings first |
+| `/cr-sweep --base origin/main` | about to push — free, and the one that stops a finding coming back in another file |
+| `/cr-await 109` | pull request open and the head moved — asks for a FULL review and waits it out |
+| `/cr-threads 109` | answering findings, with the comment id to reply to |
+| `/cr-status 109` | deciding whether to merge — is the head really reviewed |
+
+`cr-reply.sh` and `cr-nits.sh` stay scripts: replying needs a comment id and a
+sentence, which is a thing to type rather than a command to reach for.
+
 ## Scripts
 
 They live in `skills/coderabbit/scripts/`; `SKILL.md` refers to them by bare name, so either call them by path or put
