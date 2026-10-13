@@ -77,6 +77,11 @@ and started a second one anyway, because nothing read the line. **A guard whose 
 output is not a guard.** It is a per-PR lock now: `lockf` on macOS, `flock` on Linux. (Each is missing on the other system;
 the first version called `lockf` unconditionally and exited 127 on every Linux run. `lockf` refuses
 with exit **75**, measured, not the 73 its man page prose implies, and `flock` is told to match.)
+`flock` without `-o` handed the lock to the script's children, so the `sleep 60` of a killed waiter
+kept the pull request locked until it ended; measured on a stand-in, a second waiter was refused with
+75. With `-o` the lock lives exactly as long as the lock tool, as `lockf`'s already did, which is why
+the advice is to kill the script under the tool: killing the tool frees the lock and leaves the
+script asking, unlocked.
 → `SKILL.md`, *One waiter, ever*; `scripts/cr-await.sh`
 
 **Never push while a review you asked for is in flight.**
