@@ -27,7 +27,7 @@ cr_gh() {
     esac
   done
   errors=$(mktemp)
-  # shellcheck disable=SC2064 - expand the path now, while it exists
+  # shellcheck disable=SC2064 # expand the path now, while it exists
   trap "rm -f '$errors'" RETURN
   for attempt in 1 2 3 4 5 6; do
     if out=$(gh "$@" 2>"$errors"); then printf '%s' "$out"; return 0; fi
@@ -47,7 +47,8 @@ cr_gh() {
 # and HTTPS github.com forms; anything else falls through to the gh call below.
 cr_repo() {
   if [ -n "${CR_REPO:-}" ]; then printf '%s' "$CR_REPO"; return; fi
-  local url=$(git remote get-url origin 2>/dev/null || true)
+  local url
+  url=$(git remote get-url origin 2>/dev/null || true)
   case "$url" in
     git@github.com:*) printf '%s' "${url#git@github.com:}" | sed 's/\.git$//'; return ;;
     ssh://git@github.com/*) printf '%s' "${url#ssh://git@github.com/}" | sed 's/\.git$//'; return ;;
@@ -81,10 +82,11 @@ cr_repo() {
 # it is only ever read from this process's own environment.
 cr_ensure_account() {
   local repo="$1" want active login token
-  # its own statement, because `local a="$1" b="${a%%/*}"` does NOT work: bash declares every
-  # name in a `local` first -- emptying it -- and assigns afterwards, so `b` was derived from an
-  # empty `a`. That left the owner blank, which made the identity check below fall through to the
-  # access-only path in silence. Found only because the fast path prints the login it is using
+  # The owner gets its own `local`, because `local a="$1" b="${a%%/*}"` does NOT work: every
+  # word is expanded before the builtin runs, so `b` reads whatever `a` was outside this function
+  # (empty here, a stray global elsewhere), never the value just to its left. That left the owner
+  # blank, which made the identity check below fall through to the access-only path in silence.
+  # Found only because the fast path prints the login it is using.
   local owner="${repo%%/*}"
   # WHICH account, not merely one that works. The check below used to be "can the active
   # account read this repository", and several accounts can: a review was requested on a

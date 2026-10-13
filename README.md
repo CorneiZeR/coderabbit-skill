@@ -69,9 +69,10 @@ git clone https://github.com/CorneiZeR/coderabbit-skill.git
 ln -sfn "$PWD/coderabbit-skill/skills/coderabbit" ~/.claude/skills/coderabbit
 ```
 
+Runs on macOS and Linux (`cr-await.sh` locks with `lockf` on macOS, `flock` from util-linux on Linux).
 Prerequisites: [`gh`](https://cli.github.com) authenticated against the repositories you review,
 `python3` for `cr-sweep.py`, and the [`coderabbit` CLI](https://docs.coderabbit.ai/cli) for
-`cr-local.sh`. Two environment variables, both optional:
+`cr-local.sh`. Three environment variables, all optional:
 
 | variable | effect |
 | --- | --- |

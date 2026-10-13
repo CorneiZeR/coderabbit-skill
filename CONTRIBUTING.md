@@ -42,8 +42,9 @@ to survive the ways that combination lies:
 - **Guards live in the command they guard.** A check whose only effect is
   output is not a check: it was printed, ignored, and the thing it forbade
   happened anyway.
-- **macOS first.** There is no `flock` here, `lockf` refuses with exit 75, and
-  zsh aborts a command whose glob matches nothing — quote the patterns.
+- **macOS and Linux.** macOS has `lockf` and no `flock`, Linux the reverse; check
+  for a tool before calling it. `lockf` refuses with exit 75, and zsh aborts a
+  command whose glob matches nothing — quote the patterns.
 
 Document a bug in these scripts *and* fix it in the same change. A note explains
 the next failure; the patch prevents it.

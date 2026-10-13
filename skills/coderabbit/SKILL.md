@@ -237,7 +237,7 @@ from nothing.
 ## Quick reference
 
 ```bash
-S=~/.claude/skills/coderabbit/scripts
+S="${CLAUDE_SKILL_DIR}/scripts"   # this skill's own scripts/, however it was installed
 
 $S/cr-status.sh 109              # is the head actually reviewed? what is open?
 $S/cr-await.sh 109               # ask for a FULL review, wait out limits, until head is covered
@@ -250,7 +250,8 @@ $S/cr-local.sh                   # review this working tree — no PR, a differe
 $S/cr-local.sh --light --uncommitted
 ```
 
-Those five take `OWNER/REPO` from the current directory's git remote, or from `$CR_REPO`.
+The five pull request scripts (`cr-status`, `cr-await`, `cr-threads`, `cr-nits`, `cr-reply`) take
+`OWNER/REPO` from the current directory's git remote, or from `$CR_REPO`.
 `cr-local.sh` needs no repository at all: it reads the checkout you are standing in.
 
 Three environment knobs, all optional:
@@ -502,8 +503,10 @@ command as the write. `cr-await.sh` now takes a per-PR `lockf` and a second inst
 naming the log to read. Two waiters on _different_ pull requests are still fine and still
 compete for the same hourly column — that part is judgement, not a lock.
 
-`flock` is the obvious tool and is **not on macOS**; this machine has `lockf` and `shlock` only.
-Its refusal is exit **75**, measured — not the 73 its own man page prose implies.
+The lock is `lockf` on macOS, which has no `flock`, and `flock -n -E 75` on Linux, which has no
+`lockf`; a machine with neither gets a refusal that says so rather than `command not found`.
+`lockf`'s refusal is exit **75**, measured — not the 73 its own man page prose implies — and the
+`flock` call is told to use the same code.
 
 **A waiter needs a git checkout, or it lies quietly.** Start one from a scratch directory
 and every `gh pr` call in it fails with _"failed to run git: fatal: not a git repository"_ —

@@ -37,10 +37,10 @@ cr_ensure_account "$R"
 # mistake is not a guard. Seen concretely: two waiters on one pull request, asks five minutes
 # apart, both refused for rate limits, competing for the same slots.
 #
-# `lockf` re-execs this script holding an advisory lock on a per-PR file, so the lock is the
+# The lock re-execs this script holding an advisory lock on a per-PR file, so the lock is the
 # process: a second waiter exits at once, and a waiter killed mid-window releases without
-# leaving anything behind. `flock` would read better and is **not on macOS**, which ships `lockf`
-# and `shlock` only — the tidier-looking version exits 127 there on every run.
+# leaving anything behind. macOS ships `lockf` and no `flock`; Linux ships `flock` (util-linux)
+# and no `lockf`. Calling either one unconditionally exits 127 on every run on the other system.
 # Pid files and `noclobber` were rejected for the opposite failure: both survive the process
 # that wrote them and lock the pull request out for ever.
 if [ -z "${CR_AWAIT_LOCKED:-}" ]; then
@@ -48,7 +48,16 @@ if [ -z "${CR_AWAIT_LOCKED:-}" ]; then
   status=0
   # `|| status=$?` rather than a bare call: `set -e` would take the script down on the very
   # refusal this is here to report, and the child's own exit code has to survive the wrapper
-  CR_AWAIT_LOCKED=1 lockf -t 0 -k "$LOCK" "$0" "$@" || status=$?
+  if command -v lockf >/dev/null 2>&1; then
+    CR_AWAIT_LOCKED=1 lockf -t 0 -k "$LOCK" "$0" "$@" || status=$?
+  elif command -v flock >/dev/null 2>&1; then
+    # -n refuses at once instead of queueing; -E makes that refusal 75, the code `lockf` uses
+    CR_AWAIT_LOCKED=1 flock -n -E 75 "$LOCK" "$0" "$@" || status=$?
+  else
+    echo "cr-await: no lock tool -- neither lockf (macOS, BSD) nor flock (Linux, util-linux) is installed." >&2
+    echo "without one, a second waiter on this pull request cannot be refused; install util-linux." >&2
+    exit 127
+  fi
   # 75, measured -- `lockf` exits EX_TEMPFAIL, which the man page's own prose numbers wrong
   if [ "$status" = 75 ]; then
     echo "a waiter already holds $R#$PR — NOT starting a second one." >&2

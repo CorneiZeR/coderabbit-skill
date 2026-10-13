@@ -74,8 +74,9 @@ each accepted, each a review that had to run past the included allowance. The sk
 advice — *look for one already running and kill it* — for a while, and the check kept being written
 into the same command that starts the waiter: it ran in the background, printed `live waiters: 1`,
 and started a second one anyway, because nothing read the line. **A guard whose only effect is
-output is not a guard.** It is a per-PR `lockf` now. (`flock` is not on macOS; `lockf` refuses with
-exit **75**, measured, not the 73 its man page prose implies.)
+output is not a guard.** It is a per-PR lock now: `lockf` on macOS, `flock` on Linux. (Each is missing on the other system;
+the first version called `lockf` unconditionally and exited 127 on every Linux run. `lockf` refuses
+with exit **75**, measured, not the 73 its man page prose implies, and `flock` is told to match.)
 → `SKILL.md`, *One waiter, ever*; `scripts/cr-await.sh`
 
 **Never push while a review you asked for is in flight.**
