@@ -127,9 +127,10 @@ same command as the write, for the same reason the waiter lock does.
 → `SKILL.md`, *The wrong `gh` account*; `scripts/_common.sh`, `cr_ensure_account`
 
 **`local a="$1" b="${a%%/*}"` does not work.**
-Bash declares every name in a `local` first — emptying it — and assigns afterwards, so `b` was
-derived from an empty `a`. The owner came out blank, and the identity check fell through to the
-access-only path in silence. Found only because the fast path prints the login it is using.
+Bash expands every word before `local` runs, so `b` reads whatever `a` was outside the function,
+never the value just to its left: unset under `set -u`, the script stops; a global of that name is
+read silently. The owner came out blank, and the identity check fell through to the access-only
+path in silence. Found only because the fast path prints the login it is using.
 → `scripts/_common.sh`, `cr_ensure_account`
 
 **github.com fails transiently, and `set -e` turns that into a lie.**
