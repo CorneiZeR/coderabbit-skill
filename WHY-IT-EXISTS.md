@@ -82,6 +82,10 @@ kept the pull request locked until it ended; measured on a stand-in, a second wa
 75. With `-o` the lock lives exactly as long as the lock tool, as `lockf`'s already did, which is why
 the advice is to kill the script under the tool: killing the tool frees the lock and leaves the
 script asking, unlocked.
+Once the refusal printed that kill as one command, its gate had to be true: "last line over two
+minutes old" fired on a healthy waiter, because the wait for a reply to the ask printed nothing for
+up to six and a half minutes, and `cr_hold` prints every 120 seconds plus the `gh` calls between.
+That wait prints every minute now, and the gate is three minutes.
 → `SKILL.md`, *One waiter, ever*; `scripts/cr-await.sh`
 
 **Never push while a review you asked for is in flight.**
@@ -128,8 +132,8 @@ same command as the write, for the same reason the waiter lock does.
 
 **`local a="$1" b="${a%%/*}"` does not work.**
 Bash expands every word before `local` runs, so `b` reads whatever `a` was outside the function,
-never the value just to its left: unset under `set -u`, the script stops; a global of that name is
-read silently. The owner came out blank, and the identity check fell through to the access-only
+never the value just to its left. Unset, bash 3.2 (macOS) reads it empty even under `set -u`, while
+4.4 and later stop with `a: unbound variable`; a global of that name is read silently. The owner came out blank, and the identity check fell through to the access-only
 path in silence. Found only because the fast path prints the login it is using.
 → `scripts/_common.sh`, `cr_ensure_account`
 

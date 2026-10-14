@@ -579,11 +579,11 @@ instead of a count of sleeps. A suspend now costs at most one slice. Anything yo
 yourself that waits should do the same — never `sleep "$window"` in one call.
 
 Which makes the **log** the check rather than the process table: every waiting state prints
-within two minutes, so a last line older than that is a dead waiter however healthy `ps`
+at least every two minutes, so a last line older than three is a dead waiter however healthy `ps`
 looks.
 
 ```shell
-tail -2 "$log"; date -u +%H:%M:%SZ      # newer than two minutes? it is working
+tail -2 "$log"; date -u +%H:%M:%SZ      # newer than three minutes? it is working
 ```
 
 **And match the executable, never the command line, when checking whether a review is running.**

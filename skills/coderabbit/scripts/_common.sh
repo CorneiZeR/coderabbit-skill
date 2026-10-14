@@ -84,8 +84,8 @@ cr_ensure_account() {
   local repo="$1" want active login token
   # The owner gets its own `local`, because `local a="$1" b="${a%%/*}"` does NOT work: every
   # word is expanded before the builtin runs, so `b` reads whatever `a` was outside this function
-  # (here `a` is unset, so `set -u` stops with `a: unbound variable`; elsewhere a stray global `a`
-  # is read silently), never the value just to its left.
+  # (unset here: bash 3.2 reads it empty, bash 4.4+ stops on `set -u`; elsewhere a stray global
+  # `a` is read silently), never the value just to its left.
   local owner="${repo%%/*}"
   # WHICH account, not merely one that works. The check below used to be "can the active
   # account read this repository", and several accounts can: a review was requested on a

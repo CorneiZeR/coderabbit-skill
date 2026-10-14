@@ -37,9 +37,9 @@ cr_ensure_account "$R"
 # mistake is not a guard. Seen concretely: two waiters on one pull request, asks five minutes
 # apart, both refused for rate limits, competing for the same slots.
 #
-# The lock re-execs this script holding an advisory lock on a per-PR file, so the lock is the
-# process: a second waiter exits at once, and a waiter killed mid-window releases without
-# leaving anything behind. macOS ships `lockf` and no `flock`; Linux ships `flock` (util-linux)
+# The lock re-execs this script holding an advisory lock on a per-PR file, so the lock lives as
+# long as the lock tool: a second waiter exits at once, and a waiter killed mid-window releases
+# without leaving anything behind. macOS ships `lockf` and no `flock`; Linux ships `flock` (util-linux)
 # and no `lockf`. Calling either one unconditionally exits 127 on every run on the other system.
 # Pid files and `noclobber` were rejected for the opposite failure: both survive the process
 # that wrote them and lock the pull request out for ever.
@@ -63,7 +63,7 @@ if [ -z "${CR_AWAIT_LOCKED:-}" ]; then
   # 75, measured -- `lockf` exits EX_TEMPFAIL, which the man page's own prose numbers wrong
   if [ "$status" = 75 ]; then
     echo "a waiter already holds $R#$PR — NOT starting a second one." >&2
-    echo "read its log instead. Kill it only if its last line is over two minutes old:" >&2
+    echo "read its log instead. Kill it only if its last line is over three minutes old:" >&2
     echo "  ps -eo pid,ppid,etime,command | grep '[c]r-await'" >&2
     echo "then kill the script under the lock tool, not the tool, which would leave it running unlocked:" >&2
     echo "  pkill -P <pid of the lockf or flock line>" >&2
@@ -142,8 +142,12 @@ for attempt in $(seq 1 20); do
   before=$(cr_walkthrough_stamp "$R" "$PR")
 
   reply=''
-  for _ in $(seq 1 24); do
+  for i in $(seq 1 24); do
     sleep 15
+    # a line a minute, or the three-minute liveness rule calls this wait dead
+    if [ $(( i % 4 )) -eq 0 ]; then
+      echo "  waiting for a reply to the ask at $(date -u +%H:%M:%SZ)"
+    fi
     reply=$(cr_reply_after "$R" "$PR" "$asked")
     # `[ ... ] && break` would leave the loop's exit status at 1 on the last
     # turn, and `set -e` kills the script on that — silently, mid-wait
