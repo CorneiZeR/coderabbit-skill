@@ -84,9 +84,8 @@ cr_ensure_account() {
   local repo="$1" want active login token
   # The owner gets its own `local`, because `local a="$1" b="${a%%/*}"` does NOT work: every
   # word is expanded before the builtin runs, so `b` reads whatever `a` was outside this function
-  # (empty here, a stray global elsewhere), never the value just to its left. That left the owner
-  # blank, which made the identity check below fall through to the access-only path in silence.
-  # Found only because the fast path prints the login it is using.
+  # (here `a` is unset, so `set -u` stops with `a: unbound variable`; elsewhere a stray global `a`
+  # is read silently), never the value just to its left.
   local owner="${repo%%/*}"
   # WHICH account, not merely one that works. The check below used to be "can the active
   # account read this repository", and several accounts can: a review was requested on a
@@ -217,7 +216,7 @@ cr_wait_seconds() {
   unit=$(printf '%s' "$1" \
     | { grep -oiE "available in[^0-9]{0,12}${amount}[^a-zA-Z]{0,4}(second|minute|hour)" || true; } \
     | { grep -oiE '(second|minute|hour)' || true; } | tail -1)
-  case "$(printf '%s' "$unit" | tr 'A-Z' 'a-z')" in
+  case "$(printf '%s' "$unit" | tr '[:upper:]' '[:lower:]')" in
     hour) echo $(( amount * 3600 )) ;;
     minute) echo $(( amount * 60 )) ;;
     second) echo "$amount" ;;
@@ -254,6 +253,7 @@ cr_hold() {
 # What was actually reviewed. Never parse "between X and Y": that is the range
 # CodeRabbit meant to read, not the one it finished.
 cr_reviewed_sha() {
+  # shellcheck disable=SC2016 # literal Markdown backticks, not a command substitution
   cr_walkthrough "$1" "$2" | { grep -oE 'up to `[0-9a-f]+`' || true; } \
     | tail -1 | tr -d '`' | awk '{print $3}'
 }
@@ -290,6 +290,7 @@ cr_nit_sections() {
 }
 
 cr_unresolved() {
+  # shellcheck disable=SC2016 # GraphQL variables, for the server to bind
   cr_gh api graphql -f query='query($o:String!,$r:String!,$p:Int!){repository(owner:$o,name:$r){
     pullRequest(number:$p){reviewThreads(first:100){nodes{isResolved}}}}}' \
     -F o="${1%%/*}" -F r="${1##*/}" -F p="$2" \

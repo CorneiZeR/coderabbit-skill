@@ -368,8 +368,8 @@ same failure as reading the walkthrough instead of the reply, arrived at from th
 
 The rule that prevents it is the one already here, applied in order rather than in spirit:
 finish the local pass, push, _then_ ask. If a finding arrives while a push is already needed,
-kill the waiter first and re-ask after the push — a deliberate re-ask costs the same slot the
-accidental one wasted, and at least it lands on the right commit.
+kill the waiter first, as *One waiter, ever* says, and re-ask after the push — a deliberate
+re-ask costs the same slot the accidental one wasted, and at least it lands on the right commit.
 
 **And the waiter is still running during the settle, which is the part that reads like idle
 time.** Measured: a pass finished, the walkthrough reached the head, the waiter began its three
@@ -499,12 +499,12 @@ past the included allowance.
 command that launches the waiter. So it ran in the background, printed `live waiters: 1`, and
 started the second one anyway: nothing ever read the line. A guard whose only effect is output
 is not a guard, and this is the same shape as the account gate that has to live in the same
-command as the write. `cr-await.sh` now takes a per-PR `lockf` and a second instance exits 3
+command as the write. `cr-await.sh` now takes a per-PR lock and a second instance exits 3
 naming the log to read. Two waiters on _different_ pull requests are still fine and still
 compete for the same hourly column — that part is judgement, not a lock.
 
-The lock is `lockf` on macOS, which has no `flock`, and `flock -n -E 75` on Linux, which has no
-`lockf`; a machine with neither gets a refusal that says so rather than `command not found`.
+The lock is `lockf` on macOS, which has no `flock`, and `flock -n -o -E 75` on Linux, which has
+no `lockf`; a machine with neither gets a refusal that says so rather than `command not found`.
 `lockf`'s refusal is exit **75**, measured — not the 73 its own man page prose implies — and the
 `flock` call is told to use the same code.
 
@@ -592,8 +592,8 @@ shell in an unrelated directory, a heredoc being written, the guard itself quote
 wrapper. Measured: a local pass was refused with nothing running, because another session's shell
 mentioned the words. `pgrep -x coderabbit` asks about the binary, which is the question.
 
-**Count waiters by the lock, never by `ps | grep`.** The `lockf` guard added above makes one
-waiter _three_ processes matching `cr-await` — the outer shell, `lockf` itself, and the script
+**Count waiters by the lock, never by `ps | grep`.** The lock guard added above makes one
+waiter _three_ processes matching `cr-await` — the outer shell, the lock tool, and the script
 re-exec'd under it — so a grep-and-count reports 4 for a single healthy waiter, and following the
 "kill the extra ones" advice would kill the only one there is. The fix for a check that invents
 an answer is not a better regex; it is asking the thing that knows:
@@ -613,8 +613,8 @@ unmatched pattern through and the guard works, which is how a snippet like this 
 and then fails on somebody else's shell. Piping `ls` does not fix it either: zsh expands the
 glob before `ls` ever runs.
 
-One pid per lock file, and a lock file with no pid is stale and harmless — `lockf` releases with
-the process, so nothing has to clean it up. An empty listing means no waiter is running.
+One pid per lock file, and a lock file with no pid is stale and harmless — the lock releases with
+the lock tool, so nothing has to clean it up. An empty listing means no waiter is running.
 
 **Never pipe the waiter through `tail` or `head`.** `cr-await.sh 21 | tail -14` buffers: the
 progress lines the script prints every 30 to 120 seconds reach the pipe and stop there until
@@ -625,7 +625,7 @@ it started. Let it write straight to the task file and read the tail of that.
 
 And come back to it on a schedule rather than on faith — that is the half no script can do
 for you. Four hours passed because nobody looked, not because nobody was told. If the newest
-line is stale, kill it, ask once by hand, and take over with a bounded loop.
+line is stale, kill it as below, ask once by hand, and take over with a bounded loop.
 
 **Start every long-running command here so the harness owns it, not `nohup`.** This applies
 to `cr-await.sh` _and_ `cr-local.sh` — to anything in this skill that takes minutes. Launched
@@ -652,18 +652,22 @@ ps -eo pid,etime,command | grep '[c]r-await'   # the pid and how long it has bee
 ps -eo pid,etime,command | grep '[s]leep'      # the window it is waiting out, if any
 ```
 
-Before starting a waiter, **look for one already running** and kill it:
+To replace a stale waiter, **kill the script under the lock tool**, never the tool:
 
 ```bash
-ps -eo pid,etime,command | grep '[c]r-await.sh'   # etime shows how long it has been asking
-kill <pid>
+ps -eo pid,ppid,etime,command | grep '[c]r-await'   # the outer shell, the lock tool, the script under it
+pkill -P <pid of the lockf or flock line>
 ```
 
-Two things make the stale one worse than it looks. It holds no lock and prints
-nothing while it sleeps, so "no output for twenty minutes" is indistinguishable
-from dead. And it is running the **code it started with** — a fix to
-`_common.sh` does not reach a process that sourced it an hour ago, so the old
-loop keeps making the exact mistake you just repaired.
+The lock lives exactly as long as the lock tool. Killing the tool frees it while the script
+under it keeps asking, unlocked; killing the outer shell leaves both running and the lock held.
+A `sleep` or `gh` the script had started runs on to its end, holding no lock.
+
+Two things make the stale one worse than it looks. It prints nothing while it
+sleeps, so "no output for twenty minutes" is indistinguishable from dead. And it
+is running the **code it started with** — a fix to `_common.sh` does not reach a
+process that sourced it an hour ago, so the old loop keeps making the exact
+mistake you just repaired.
 
 ## The wrong `gh` account looks exactly like "nothing to report"
 

@@ -51,8 +51,10 @@ if [ -z "${CR_AWAIT_LOCKED:-}" ]; then
   if command -v lockf >/dev/null 2>&1; then
     CR_AWAIT_LOCKED=1 lockf -t 0 -k "$LOCK" "$0" "$@" || status=$?
   elif command -v flock >/dev/null 2>&1; then
-    # -n refuses at once instead of queueing; -E makes that refusal 75, the code `lockf` uses
-    CR_AWAIT_LOCKED=1 flock -n -E 75 "$LOCK" "$0" "$@" || status=$?
+    # -n refuses at once instead of queueing; -E makes that refusal 75, the code `lockf` uses;
+    # -o keeps the lock out of the script's children, or a `sleep 60` left by a killed waiter
+    # holds it until it ends; as with `lockf`, only the tool itself holds it
+    CR_AWAIT_LOCKED=1 flock -n -o -E 75 "$LOCK" "$0" "$@" || status=$?
   else
     echo "cr-await: no lock tool -- neither lockf (macOS, BSD) nor flock (Linux, util-linux) is installed." >&2
     echo "without one, a second waiter on this pull request cannot be refused; install util-linux." >&2
@@ -62,7 +64,9 @@ if [ -z "${CR_AWAIT_LOCKED:-}" ]; then
   if [ "$status" = 75 ]; then
     echo "a waiter already holds $R#$PR — NOT starting a second one." >&2
     echo "read its log instead. Kill it only if its last line is over two minutes old:" >&2
-    echo "  ps -eo pid,etime,command | grep '[c]r-await'" >&2
+    echo "  ps -eo pid,ppid,etime,command | grep '[c]r-await'" >&2
+    echo "then kill the script under the lock tool, not the tool, which would leave it running unlocked:" >&2
+    echo "  pkill -P <pid of the lockf or flock line>" >&2
     exit 3
   fi
   exit "$status"

@@ -77,6 +77,11 @@ and started a second one anyway, because nothing read the line. **A guard whose 
 output is not a guard.** It is a per-PR lock now: `lockf` on macOS, `flock` on Linux. (Each is missing on the other system;
 the first version called `lockf` unconditionally and exited 127 on every Linux run. `lockf` refuses
 with exit **75**, measured, not the 73 its man page prose implies, and `flock` is told to match.)
+`flock` without `-o` handed the lock to the script's children, so the `sleep 60` of a killed waiter
+kept the pull request locked until it ended; measured on a stand-in, a second waiter was refused with
+75. With `-o` the lock lives exactly as long as the lock tool, as `lockf`'s already did, which is why
+the advice is to kill the script under the tool: killing the tool frees the lock and leaves the
+script asking, unlocked.
 → `SKILL.md`, *One waiter, ever*; `scripts/cr-await.sh`
 
 **Never push while a review you asked for is in flight.**
@@ -122,9 +127,10 @@ same command as the write, for the same reason the waiter lock does.
 → `SKILL.md`, *The wrong `gh` account*; `scripts/_common.sh`, `cr_ensure_account`
 
 **`local a="$1" b="${a%%/*}"` does not work.**
-Bash declares every name in a `local` first — emptying it — and assigns afterwards, so `b` was
-derived from an empty `a`. The owner came out blank, and the identity check fell through to the
-access-only path in silence. Found only because the fast path prints the login it is using.
+Bash expands every word before `local` runs, so `b` reads whatever `a` was outside the function,
+never the value just to its left: unset under `set -u`, the script stops; a global of that name is
+read silently. The owner came out blank, and the identity check fell through to the access-only
+path in silence. Found only because the fast path prints the login it is using.
 → `scripts/_common.sh`, `cr_ensure_account`
 
 **github.com fails transiently, and `set -e` turns that into a lie.**
